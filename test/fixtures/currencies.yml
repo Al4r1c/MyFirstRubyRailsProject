@@ -1,0 +1,13 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  curr_idSteam: 1
+  curr_deviseSigle: MyString
+  curr_devise: MyString
+  curr_tauxEuro: 9.99
+
+two:
+  curr_idSteam: 1
+  curr_deviseSigle: MyString
+  curr_devise: MyString
+  curr_tauxEuro: 9.99

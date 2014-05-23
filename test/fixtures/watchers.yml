@@ -1,0 +1,15 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  wat_libelle: MyString
+  wat_qualite: MyString
+  wat_lien: MyString
+  wat_prixAlert: 9.99
+  wat_dateAjout: 2014-05-20 15:27:15
+
+two:
+  wat_libelle: MyString
+  wat_qualite: MyString
+  wat_lien: MyString
+  wat_prixAlert: 9.99
+  wat_dateAjout: 2014-05-20 15:27:15

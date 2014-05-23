@@ -1,0 +1,376 @@
+<div role="main" class="content clearfix">
+  <div class="contentBlock">
+    <a id="launchWatcher"><h2>Lancer watcher</h2></a>
+
+    <div id="watcherResult"></div>
+  </div>
+
+  <div class="contentBlock marginTop">
+    <h1>
+      Ajouter un
+      watcher<a id="btnAdd">
+      <%= image_tag "big-add-h1.png", alt: 'Ajouter une application', title: 'Ajouter une application' %></a>
+    </h1>
+
+    <table id="listeWatchers" class="display">
+      <thead>
+      <tr>
+        <th style="width: 250px">Libelle</th>
+        <th>Lien</th>
+        <th style="width: 50px; text-align: center">Administrer</th>
+      </tr>
+      </thead>
+      <tbody>
+      <% @watcherLinks.each do |unLien| %>
+          <tr data-id="<%= unLien.id %>" data-libelle="<%= unLien.wat_libelle %>" data-qualite="<%= unLien.wat_qualite %>">
+            <td>
+              <a target="_blank" href="<%= unLien.wat_lien[0..unLien.wat_lien.index('/render')] %>"><%= unLien.wat_libelle %>
+                (<%= unLien.wat_qualite %>)</a></td>
+            <td><%= unLien.wat_lien %></td>
+            <td></td>
+          </tr>
+      <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<audio id="soundHandle" style="display: none;" src="/sound/ring.mp3"></audio>
+<audio id="errorSoundHandle" style="display: none;" src="/sound/fail.wav"></audio>
+
+<script>window.jQuery || document.write('<script src="/javascripts/jquery-1.10.2.min.js"><\/script>')</script>
+
+
+<%= javascript_include_tag 'jquery.dataTables.min', 'dataTable.options', 'plugins', 'dialog', 'tooltips', 'validInput', 'data-turbolinks-track' => true %>
+
+
+<%= javascript_tag "var AUTH_TOKEN = #{form_authenticity_token.inspect};" if protect_against_forgery? %>
+
+<script type="text/javascript">
+    var totalItemByQuery = 4, totalQueryUnTour, totalQuery;
+
+    var stopQuery;
+
+
+    function launchOneQuery(allData, queryNumber) {
+        var watcherResultDiv = $('#watcherResult'), loadingTextAndImg = watcherResultDiv.find('> span');
+
+        if (stopQuery === false) {
+            var portionItemsIdToQuery = allData.splice(0, totalItemByQuery);
+
+            loadingTextAndImg.find('span').text('Query ' + queryNumber + '/' + totalQueryUnTour + ' - Total: ' +
+                    totalQuery + ' - Tours: ' + Math.floor(totalQuery / totalQueryUnTour));
+
+            totalQuery++;
+
+            $.ajax({
+                method: "POST",
+                data: {data: portionItemsIdToQuery},
+                url: '/watcher/recherche',
+                success: function (result) {
+                    /*try {
+                     var parsedJsonResult = $.parseJSON(result);
+
+                     if (parsedJsonResult['success'] == 'true') {
+
+                     $.each(portionItemsIdToQuery, function (id, idItem) {
+                     $('#item-' + idItem).remove();
+                     });
+
+                     if (parsedJsonResult.listItems != undefined) {
+                     document.getElementById('soundHandle').play();
+                     $('.newlyFoundItem').removeClass('newlyFoundItem');
+
+                     $.each(parsedJsonResult.listItems, function (index, unItem) {
+                     var newDivPourUnItem = $('<div></div>').attr({
+                     id: 'item-' + unItem.wat_id,
+                     class: 'newlyFoundItem'
+                     }), ulListePrix = $('<ul></ul>');
+
+                     $('<div class="closeButton"></div>').appendTo(newDivPourUnItem).click(function () {
+                     $(this).parent('div').remove();
+                     });
+
+                     newDivPourUnItem.append('<span>' + unItem.wat_libelle + ' (' + unItem.wat_qualite +
+                     ')</span><br />');
+                     newDivPourUnItem.append('Prix trouvés:');
+
+                     $.each(unItem.itemTrouves, function (id, unPrix) {
+                     ulListePrix.append($('<li>' + unPrix + ' euros</li>'));
+                     });
+
+                     newDivPourUnItem.append(ulListePrix).append('<a target="_blank" href="' +
+                     unItem['lienMarket'] + '">Lien vers le market</a>');
+
+                     loadingTextAndImg.before(newDivPourUnItem);
+                     });
+                     }
+
+                     if (parsedJsonResult.failReach != undefined) {
+                     console.log(parsedJsonResult.failReach);
+                     }
+
+                     if (parsedJsonResult.failConversion != undefined) {
+                     console.log(parsedJsonResult.failConversion);
+                     }
+
+                     if (allData.length > 0) {
+                     launchOneQuery(allData, queryNumber + 1);
+                     } else {
+                     startQuery();
+                     }
+                     } else {
+                     $.Dialog('error', {
+                     title: 'Erreur',
+                     text: 'Une erreur est survenue lors de l\'éxécution du script PHP.'
+                     });
+                     }
+                     } catch (e) {
+                     $.Dialog('error', {
+                     title: 'Erreur',
+                     text: 'Une erreur est survenue lors du parsing JSON.'
+                     });
+                     }*/
+                },
+                error: function () {
+                    $.Dialog('error', {
+                        title: 'Erreur',
+                        text: 'Une erreur réseau est survenue.',
+                        buttons: [
+                            {caption: 'Relancer', type: 'cancel', callback: function () {
+                                start();
+                            }},
+                            {caption: 'Quitter', class: 'no', type: 'cancel'}
+                        ]
+                    });
+                    document.getElementById('errorSoundHandle').play();
+                }
+            });
+        } else {
+            if (watcherResultDiv.find('> div').length == 0) {
+                watcherResultDiv.html('Aucun item trouvé.');
+            }
+
+            loadingTextAndImg.remove();
+        }
+    }
+
+
+    function startQuery() {
+        var tabAllItemId = [];
+
+        $.each($('#listeWatchers').dataTable().fnGetNodes(), function () {
+            tabAllItemId.push($(this).data('id'));
+        });
+
+        totalQueryUnTour = Math.ceil(tabAllItemId.length / totalItemByQuery);
+
+        launchOneQuery(tabAllItemId, 1);
+    }
+
+    function start() {
+        /*$('#watcherResult').html('').append($('<span><img src="/images/loading_icon.gif" alt=\"loading\" /> " +
+         "<span>Mise à jour des devises</span></span>'));
+
+         $('#launchWatcher').off('click').click(stop).find('h2').text('Stop');*/
+
+        $.ajax({
+            method: "POST",
+            url: '/currency/update',
+            data: {authenticity_token: AUTH_TOKEN},
+            success: function () {
+                /*totalQuery = 0;
+                 stopQuery = false;
+
+                 startQuery();*/
+
+            }
+        });
+    }
+
+    function stop() {
+        stopQuery = true;
+
+        $('#launchWatcher').off('click').click(start).find('h2').text('Lancer watcher');
+    }
+
+    $('#launchWatcher').click(start);
+
+
+    $('#btnAdd').dialogBox('form', {
+        title: 'Ajouter un watcher',
+        form: [
+            {label: 'Libelle', id: 'libelle', valid: {
+                minlength: 2
+            }},
+            {label: 'Qualité', id: 'qualite', type: 'select', value: [
+                'Neuve', 'Très peu usée', 'Testée sur le terrain', 'Marquée par les combats', 'Usée'
+            ]
+            },
+            {label: 'Lien', id: 'lien', valid: {
+                notnull: true,
+                type: 'url'
+            }}
+        ],
+        onValid: function (content) {
+            var table = $('#listeWatchers'), dataTable = table.dataTable();
+
+            var libelle = content.find('#libelle').val(), qualite = content.find('#qualite').val(), lien = content.find('#lien').val();
+
+            lien = lien.replace("||", "%7C");
+            lien = lien.replace("™", "%E2");
+
+            if (lien.endsWith('/') != true) {
+                lien += '/';
+            }
+
+            lien = lien + 'render/?query=&search_descriptions=0&start=0&count=5';
+
+            $.ajax({
+                method: "POST",
+                url: "/watcher/add",
+                data: formatData(libelle, qualite, lien),
+                success: function (result) {
+                    if (result == '') {
+                        $.Dialog('error', {
+                            title: 'Erreur',
+                            text: 'Une erreur est survenue.'
+                        });
+                    } else {
+                        var t = dataTable.fnAddData([
+                                    '<a target="_blank" href="' + lien.substr(0, lien.indexOf('render')) + '">' + libelle + ' (' +
+                                    qualite + ')</a>', lien, ''
+                        ]);
+
+                        creerBoutonsActions($(dataTable.fnSettings().aoData[t[0]].nTr));
+
+                        $(dataTable.fnSettings().aoData[t[0]].nTr).data({
+                            id: result, libelle: libelle, qualite: qualite
+                        });
+                    }
+                },
+                error: function () {
+                    $.Dialog('error', {
+                        title: 'Erreur',
+                        text: 'Une erreur est survenue.'
+                    });
+                }
+            });
+        }
+    });
+
+    function formatData(libelle, qualite, lien, id) {
+        return {
+            id: (typeof(id) === 'undefined' ? 0 : id),
+            libelle: libelle,
+            qualite: qualite,
+            lien: lien,
+            authenticity_token: AUTH_TOKEN
+        };
+    }
+
+    function creerBoutonsActions(trList) {
+        if (trList.eq(0).find('td').length > 1) {
+            var tdToAppend = trList.find('td:last');
+
+            $('<a><img data-action="edit" src="/images/big-edit.png" title="Editer" alt="Editer"/></a>').click(function () {
+                var concernedTr = $(this).parents('tr');
+
+                $.Dialog('form', {
+                    title: 'Editer un watcher',
+                    form: [
+                        {label: 'Libelle', id: 'libelle', value: concernedTr.data('libelle'), valid: {
+                            minlength: 2
+                        }},
+                        {label: 'Qualité', id: 'qualite', type: 'select', value: [
+                            {value: 'Neuve', selected: (concernedTr.data('qualite') == 'Neuve')},
+                            {value: 'Très peu usée', selected: (concernedTr.data('qualite') == 'Très peu usée')},
+                            {value: 'Testée sur le terrain', selected: (concernedTr.data('qualite') ==
+                                    'Testée sur le terrain')},
+                            {value: 'Marquée par les combats', selected: (concernedTr.data('qualite') ==
+                                    'Marquée par les combats')},
+                            {value: 'Usée', selected: (concernedTr.data('qualite') == 'Usée')}
+                        ]
+                        },
+                        {label: 'Lien', id: 'lien', value: concernedTr.children('td').eq(1).text(), valid: {
+                            notnull: true,
+                            type: 'url'
+                        }}
+                    ],
+                    onValid: function (content) {
+                        var libelle = content.find('#libelle').val(), qualite = content.find('#qualite').val(), lien = content.find('#lien').val();
+
+                        $.ajax({
+                            method: "POST",
+                            url: '/watcher/update',
+                            data: formatData(libelle, qualite, lien, concernedTr.data('id')),
+                            success: function (result) {
+                                if (result != 1) {
+                                    $.Dialog('error', {
+                                        title: 'Erreur',
+                                        text: 'Une erreur est survenue.'
+                                    });
+                                } else {
+                                    var dataTable = concernedTr.parents('table').dataTable();
+
+                                    concernedTr.data('libelle', libelle);
+                                    concernedTr.data('qualite', qualite);
+
+                                    dataTable.fnUpdate('<a target="_blank" href="' +
+                                                    lien.substr(0, lien.indexOf('render')) + '">' + libelle + ' (' + qualite + ')</a>',
+                                            dataTable.fnGetPosition(concernedTr.get(0)), 0);
+                                    dataTable.fnUpdate(lien, dataTable.fnGetPosition(concernedTr.get(0)), 1);
+                                }
+                            }
+                        });
+                    }
+                });
+            }).appendTo(tdToAppend);
+
+
+            $('<a><img data-action="delete" src="/images/big-delete.png" title="Supprimer" alt="Supprimer" /></a>').click(function () {
+                var concernedTr = $(this).parents('tr');
+
+                $.Dialog('confirm', {
+                    title: 'Confirmation',
+                    text: 'Supprimer le watcher "' + concernedTr.children('td').eq(0).text() + '" ?',
+                    onValid: function () {
+                        $.ajax({
+                            method: "POST",
+                            url: '/watcher/delete',
+                            data: {id: concernedTr.data('id'), authenticity_token: AUTH_TOKEN},
+                            success: function (result) {
+                                if (result != 1) {
+                                    $.Dialog('error', {
+                                        title: 'Erreur',
+                                        text: 'Une erreur est survenue.'
+                                    });
+                                } else {
+                                    var dataTable = concernedTr.parents('table').dataTable();
+
+                                    dataTable.fnDeleteRow(dataTable.fnGetPosition(concernedTr.get(0)));
+                                }
+                            }
+                        });
+                    }
+                });
+            }).appendTo(tdToAppend);
+        }
+    }
+
+    var table = $('#listeWatchers');
+
+    creerBoutonsActions(table.find('tbody tr'));
+
+    table.dataTable({
+        iDisplayLength: 25,
+        aLengthMenu: [
+            [25, 50, -1],
+            [25, 50, "Tout"]
+        ],
+        aoColumns: [
+            null, null, { "bSortable": false, "bSearchable": false, "sClass": "center" }
+        ]
+    });
+
+</script>

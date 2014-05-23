@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<!--[if IE 8]>
+<html class="no-javascripts lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js"> <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Ajout Watcher</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width">
+
+
+  <%= stylesheet_link_tag    'application', 'dataTables', 'media' => :all, 'data-turbolinks-track' => true %>
+  <%= csrf_meta_tags %>
+</head>
+
+<body>
+
+<header role="banner">
+  <nav role="navigation">
+    <h1>Market Watcher</h1>
+
+    <!--<ul id="menu">
+        <li><a href="/">Accueil</a></li>
+        <li><a>Catalogue</a>
+            <ul>
+                <li><a href="/produit/">Produits</a></li>
+                <li><a href="/categorie/">Catégories</a></li>
+                <li><a href="/application/">Applications</a></li>
+            </ul>
+        </li>
+        <li><a href="/client/">Commerce</a>
+            <ul>
+                <li><a href="/client/">Clients</a></li>
+                <li><a href="/commande/">Commandes</a></li>
+                <li><a href="/promotion/">Promotions</a></li>
+                <li><a href="/transp/">Transporteurs</a></li>
+            </ul>
+        </li>
+        <li><a>Divers</a>
+            <ul>
+                <li><a href="/slideshow/">Slideshow</a></li>
+                <li><a href="/page-editoriales/">Pages</a></li>
+                <li><a href="/contact/">Contact</a></li>
+            </ul>
+        </li>
+        <li><a>Configurations</a>
+            <ul>
+                <li><a href="/taxe/">TVA</a></li>
+                <li><a href="/zone/">Zones</a></li>
+                <li><a href="/general/">General</a></li>
+            </ul>
+        </li>
+        <li><a>BackOffice</a>
+            <ul>
+                <li><a href="/utilisateur/">Utilisateurs</a></li>
+            </ul>
+        </li>
+    </ul>-->
+  </nav>
+</header>
+
+<%= yield %>
+
+</body>
+</html>
