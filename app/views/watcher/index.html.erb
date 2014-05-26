@@ -47,90 +47,101 @@
 <%= javascript_tag "var AUTH_TOKEN = #{form_authenticity_token.inspect};" if protect_against_forgery? %>
 
 <script type="text/javascript">
-    var totalItemByQuery = 4, totalQueryUnTour, totalQuery;
+    var totalItemByQuery = 5, totalQuery;
 
     var stopQuery;
 
+    var tabAllItemId;
 
-    function launchOneQuery(allData, queryNumber) {
+    function launchOneQuery(itemStart) {
         var watcherResultDiv = $('#watcherResult'), loadingTextAndImg = watcherResultDiv.find('> span');
 
         if (stopQuery === false) {
-            var portionItemsIdToQuery = allData.splice(0, totalItemByQuery);
+            var portionItemsIdToQuery = [];
 
-            loadingTextAndImg.find('span').text('Query ' + queryNumber + '/' + totalQueryUnTour + ' - Total: ' +
-                    totalQuery + ' - Tours: ' + Math.floor(totalQuery / totalQueryUnTour));
+            var cptItem = 0;
+            while (portionItemsIdToQuery.length < totalItemByQuery) {
+                var itemNumber = itemStart + cptItem;
+
+                if (itemNumber in tabAllItemId) {
+                    portionItemsIdToQuery.push(tabAllItemId[itemNumber]);
+                    cptItem++;
+                } else {
+                    itemStart = 0;
+                }
+            }
 
             totalQuery++;
 
+            loadingTextAndImg.find('span').text('Total query: ' + totalQuery);
+
             $.ajax({
                 method: "POST",
-                data: {data: portionItemsIdToQuery},
+                data: {itemsId: portionItemsIdToQuery, authenticity_token: AUTH_TOKEN},
                 url: '/watcher/recherche',
-                success: function (result) {
-                    /*try {
-                     var parsedJsonResult = $.parseJSON(result);
+                dataType: "json",
+                success: function (parsedJsonResult) {
+                    try {
+                        if (parsedJsonResult.success == true) {
+                            $.each(portionItemsIdToQuery, function (id, idItem) {
+                                $('#item-' + idItem).remove();
+                            });
 
-                     if (parsedJsonResult['success'] == 'true') {
+                            if (parsedJsonResult.listItems != undefined) {
+                                document.getElementById('soundHandle').play();
+                                $('.newlyFoundItem').removeClass('newlyFoundItem');
 
-                     $.each(portionItemsIdToQuery, function (id, idItem) {
-                     $('#item-' + idItem).remove();
-                     });
+                                $.each(parsedJsonResult.listItems, function (index, unItem) {
+                                    var newDivPourUnItem = $('<div></div>').attr({
+                                        id: 'item-' + unItem.id,
+                                        class: 'newlyFoundItem'
+                                    }), ulListePrix = $('<ul></ul>');
 
-                     if (parsedJsonResult.listItems != undefined) {
-                     document.getElementById('soundHandle').play();
-                     $('.newlyFoundItem').removeClass('newlyFoundItem');
+                                    $('<div class="closeButton"></div>').appendTo(newDivPourUnItem).click(function () {
+                                        $(this).parent('div').remove();
+                                    });
 
-                     $.each(parsedJsonResult.listItems, function (index, unItem) {
-                     var newDivPourUnItem = $('<div></div>').attr({
-                     id: 'item-' + unItem.wat_id,
-                     class: 'newlyFoundItem'
-                     }), ulListePrix = $('<ul></ul>');
+                                    newDivPourUnItem.append('<span>' + unItem.wat_libelle + ' (' + unItem.wat_qualite +
+                                            ')</span><br />');
+                                    newDivPourUnItem.append('Prix trouvés:');
 
-                     $('<div class="closeButton"></div>').appendTo(newDivPourUnItem).click(function () {
-                     $(this).parent('div').remove();
-                     });
+                                    $.each(unItem.itemTrouves, function (id, unPrix) {
+                                        ulListePrix.append($('<li>' + unPrix + ' euros</li>'));
+                                    });
 
-                     newDivPourUnItem.append('<span>' + unItem.wat_libelle + ' (' + unItem.wat_qualite +
-                     ')</span><br />');
-                     newDivPourUnItem.append('Prix trouvés:');
+                                    newDivPourUnItem.append(ulListePrix).append('<a target="_blank" href="' +
+                                            unItem.wat_lien.substr(0, unItem.wat_lien.indexOf('render')) +
+                                            '">Lien vers le market</a>');
 
-                     $.each(unItem.itemTrouves, function (id, unPrix) {
-                     ulListePrix.append($('<li>' + unPrix + ' euros</li>'));
-                     });
+                                    loadingTextAndImg.before(newDivPourUnItem);
+                                });
+                            }
 
-                     newDivPourUnItem.append(ulListePrix).append('<a target="_blank" href="' +
-                     unItem['lienMarket'] + '">Lien vers le market</a>');
+                            if (parsedJsonResult.failReach != undefined) {
+                                console.log(parsedJsonResult.failReach);
+                            }
 
-                     loadingTextAndImg.before(newDivPourUnItem);
-                     });
-                     }
+                            if (parsedJsonResult.failConversion != undefined) {
+                                console.log(parsedJsonResult.failConversion);
+                            }
 
-                     if (parsedJsonResult.failReach != undefined) {
-                     console.log(parsedJsonResult.failReach);
-                     }
-
-                     if (parsedJsonResult.failConversion != undefined) {
-                     console.log(parsedJsonResult.failConversion);
-                     }
-
-                     if (allData.length > 0) {
-                     launchOneQuery(allData, queryNumber + 1);
-                     } else {
-                     startQuery();
-                     }
-                     } else {
-                     $.Dialog('error', {
-                     title: 'Erreur',
-                     text: 'Une erreur est survenue lors de l\'éxécution du script PHP.'
-                     });
-                     }
-                     } catch (e) {
-                     $.Dialog('error', {
-                     title: 'Erreur',
-                     text: 'Une erreur est survenue lors du parsing JSON.'
-                     });
-                     }*/
+                            launchOneQuery(
+                                            (itemStart + totalItemByQuery) <
+                                            tabAllItemId.length ?
+                                            (itemStart + totalItemByQuery) :
+                                            1);
+                        } else {
+                            $.Dialog('error', {
+                                title: 'Erreur',
+                                text: 'Une erreur est survenue lors de l\'éxécution du script PHP.'
+                            });
+                        }
+                    } catch (e) {
+                        $.Dialog('error', {
+                            title: 'Erreur',
+                            text: 'Une erreur est survenue lors du parsing JSON.'
+                        });
+                    }
                 },
                 error: function () {
                     $.Dialog('error', {
@@ -157,33 +168,31 @@
 
 
     function startQuery() {
-        var tabAllItemId = [];
+        tabAllItemId = [];
 
         $.each($('#listeWatchers').dataTable().fnGetNodes(), function () {
             tabAllItemId.push($(this).data('id'));
         });
 
-        totalQueryUnTour = Math.ceil(tabAllItemId.length / totalItemByQuery);
-
-        launchOneQuery(tabAllItemId, 1);
+        for (var cpt = 0; cpt < Math.floor(tabAllItemId.length / 50); cpt++) {
+            launchOneQuery(50 * cpt);
+        }
     }
 
     function start() {
-        /*$('#watcherResult').html('').append($('<span><img src="/images/loading_icon.gif" alt=\"loading\" /> " +
-         "<span>Mise à jour des devises</span></span>'));
+        $('#watcherResult').html('').append($('<span><img src="/images/loading_icon.gif" alt=\"loading\" /> <span>Mise à jour des devises</span></span>'));
 
-         $('#launchWatcher').off('click').click(stop).find('h2').text('Stop');*/
+        $('#launchWatcher').off('click').click(stop).find('h2').text('Stop');
 
         $.ajax({
             method: "POST",
             url: '/currency/update',
             data: {authenticity_token: AUTH_TOKEN},
             success: function () {
-                /*totalQuery = 0;
-                 stopQuery = false;
+                totalQuery = 0;
+                stopQuery = false;
 
-                 startQuery();*/
-
+                startQuery();
             }
         });
     }
@@ -238,8 +247,15 @@
                         });
                     } else {
                         var t = dataTable.fnAddData([
-                                    '<a target="_blank" href="' + lien.substr(0, lien.indexOf('render')) + '">' + libelle + ' (' +
-                                    qualite + ')</a>', lien, ''
+                                    '<a target="_blank" href="' +
+                                    lien.substr(0, lien.indexOf('render')) +
+                                    '">' +
+                                    libelle +
+                                    ' (' +
+                                    qualite +
+                                    ')</a>',
+                            lien,
+                            ''
                         ]);
 
                         creerBoutonsActions($(dataTable.fnSettings().aoData[t[0]].nTr));
@@ -317,8 +333,14 @@
                                     concernedTr.data('qualite', qualite);
 
                                     dataTable.fnUpdate('<a target="_blank" href="' +
-                                                    lien.substr(0, lien.indexOf('render')) + '">' + libelle + ' (' + qualite + ')</a>',
-                                            dataTable.fnGetPosition(concernedTr.get(0)), 0);
+                                                    lien.substr(0, lien.indexOf('render')) +
+                                                    '">' +
+                                                    libelle +
+                                                    ' (' +
+                                                    qualite +
+                                                    ')</a>',
+                                            dataTable.fnGetPosition(concernedTr.get(0)),
+                                            0);
                                     dataTable.fnUpdate(lien, dataTable.fnGetPosition(concernedTr.get(0)), 1);
                                 }
                             }
